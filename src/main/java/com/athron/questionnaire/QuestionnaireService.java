@@ -23,19 +23,23 @@ class QuestionnaireService {
         this.jdbc = jdbc;
     }
 
-    List<Summary> list(String accountId, int offset, int limit) {
+    List<Summary> list(String accountId, UUID collectionId, int offset, int limit) {
         if (offset < 0 || limit < 1 || limit > 100) {
             throw invalid("Offset must be nonnegative and limit must be between 1 and 100");
         }
-        return jdbc.query("SELECT id, title FROM questionnaire WHERE account_id = ? ORDER BY id LIMIT ? OFFSET ?",
+        return jdbc.query("""
+                SELECT id, title FROM questionnaire WHERE account_id = ?
+                AND (CAST(? AS uuid) IS NULL OR collection_id IS NULL OR collection_id = ?) ORDER BY id LIMIT ? OFFSET ?
+                """,
                 (row, index) -> new Summary(row.getObject("id", UUID.class), row.getString("title")),
-                accountId, limit, offset);
+                accountId, collectionId, collectionId, limit, offset);
     }
 
     @Transactional
-    View create(String accountId, Write body) {
+    View create(String accountId, UUID collectionId, Write body) {
         UUID id = UUID.randomUUID();
-        jdbc.update("INSERT INTO questionnaire (id, account_id, title) VALUES (?, ?, ?)", id, accountId, body.title());
+        jdbc.update("INSERT INTO questionnaire (id, account_id, title, collection_id) VALUES (?, ?, ?, ?)",
+                id, accountId, body.title(), collectionId);
         return new View(id, body.title(), saveQuestions(id, body.questions()));
     }
 

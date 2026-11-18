@@ -21,14 +21,15 @@ class QuestionnaireController {
 
     @GetMapping
     List<Summary> list(@RequestAttribute String accountId,
+                       @RequestParam(required = false) UUID collectionId,
                        @RequestParam(defaultValue = "0") int offset,
                        @RequestParam(defaultValue = "50") int limit) {
-        return service.list(accountId, offset, limit);
+        return service.list(accountId, collectionId, offset, limit);
     }
 
     @PostMapping
-    ResponseEntity<View> create(@RequestAttribute String accountId, @Valid @RequestBody Write body) {
-        View view = service.create(accountId, body);
+    ResponseEntity<View> create(@RequestAttribute String accountId, @RequestParam(required = false) UUID collectionId, @Valid @RequestBody Write body) {
+        View view = service.create(accountId, collectionId, body);
         return ResponseEntity.created(URI.create("/api/v1/questionnaires/" + view.id())).body(view);
     }
 
